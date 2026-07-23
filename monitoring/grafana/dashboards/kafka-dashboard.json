@@ -1,0 +1,144 @@
+{
+  "annotations": { "list": [] },
+  "description": "Kafka metrics — throughput, consumer lag, partitions, and message rates",
+  "editable": true,
+  "panels": [
+    {
+      "title": "Messages Produced/sec",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+      "datasource": "Prometheus",
+      "targets": [
+        { "expr": "sum(rate(producer_messages_produced_total[1m]))", "legendFormat": "Produced/sec" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "ops", "color": { "mode": "fixed", "fixedColor": "green" } } }
+    },
+    {
+      "title": "Messages Consumed/sec",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 },
+      "datasource": "Prometheus",
+      "targets": [
+        { "expr": "sum(rate(consumer_messages_consumed_total[1m]))", "legendFormat": "Consumed/sec" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "ops", "color": { "mode": "fixed", "fixedColor": "blue" } } }
+    },
+    {
+      "title": "Messages Stored in DB",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 0 },
+      "datasource": "Prometheus",
+      "targets": [
+        { "expr": "sum(consumer_messages_stored_total)", "legendFormat": "Stored" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "short", "color": { "mode": "fixed", "fixedColor": "purple" } } }
+    },
+    {
+      "title": "Dead Letter Queue",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 0 },
+      "datasource": "Prometheus",
+      "targets": [
+        { "expr": "sum(consumer_messages_dlq_total)", "legendFormat": "DLQ" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "short", "color": { "mode": "fixed", "fixedColor": "red" } } }
+    },
+    {
+      "title": "Kafka Throughput",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+      "datasource": "Prometheus",
+      "targets": [
+        { "expr": "sum(rate(producer_messages_produced_total[1m]))", "legendFormat": "Produced" },
+        { "expr": "sum(rate(consumer_messages_consumed_total[1m]))", "legendFormat": "Consumed" }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 20, "lineWidth": 2 }
+        }
+      }
+    },
+    {
+      "title": "Consumer Lag",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+      "datasource": "Prometheus",
+      "targets": [
+        { "expr": "kafka_consumergroup_lag", "legendFormat": "{{ consumergroup }} - {{ topic }}/{{ partition }}" }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": { "drawStyle": "line", "fillOpacity": 30, "lineWidth": 2 },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 100 },
+              { "color": "red", "value": 1000 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "Producer Metrics by Service",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
+      "datasource": "Prometheus",
+      "targets": [
+        { "expr": "sum(rate(producer_messages_produced_total[1m])) by (service)", "legendFormat": "{{ service }}" }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 15, "lineWidth": 2 }
+        }
+      }
+    },
+    {
+      "title": "Produce Latency Distribution",
+      "type": "heatmap",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 12 },
+      "datasource": "Prometheus",
+      "targets": [
+        { "expr": "sum(increase(producer_produce_latency_seconds_bucket[1m])) by (le)", "format": "heatmap" }
+      ],
+      "options": {
+        "color": { "scheme": "Blues", "mode": "scheme" },
+        "yAxis": { "unit": "s" }
+      }
+    },
+    {
+      "title": "Batch Processing Time",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 20 },
+      "datasource": "Prometheus",
+      "targets": [
+        { "expr": "histogram_quantile(0.95, sum(rate(consumer_batch_processing_seconds_bucket[5m])) by (le))", "legendFormat": "p95" },
+        { "expr": "histogram_quantile(0.50, sum(rate(consumer_batch_processing_seconds_bucket[5m])) by (le))", "legendFormat": "p50" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "s", "custom": { "drawStyle": "line", "fillOpacity": 10, "lineWidth": 2 } } }
+    },
+    {
+      "title": "DB Insert Duration",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 20 },
+      "datasource": "Prometheus",
+      "targets": [
+        { "expr": "histogram_quantile(0.95, sum(rate(consumer_db_insert_duration_seconds_bucket[5m])) by (le))", "legendFormat": "p95 Insert" },
+        { "expr": "rate(consumer_db_insert_errors_total[5m])", "legendFormat": "Errors/sec" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "s", "custom": { "drawStyle": "line", "fillOpacity": 10, "lineWidth": 2 } } }
+    }
+  ],
+  "refresh": "10s",
+  "schemaVersion": 36,
+  "style": "dark",
+  "tags": ["kafka", "streaming", "monitoring"],
+  "time": { "from": "now-1h", "to": "now" },
+  "title": "Kafka Dashboard",
+  "uid": "kafka-main",
+  "version": 1
+}

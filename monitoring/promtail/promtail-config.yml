@@ -1,0 +1,96 @@
+# =============================================================================
+# Promtail Configuration
+# =============================================================================
+# Scrapes Docker container logs and ships them to Loki.
+# Extracts service labels and log levels from container names
+# and JSON log content.
+# =============================================================================
+
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+    batchwait: 1s
+    batchsize: 1048576
+    timeout: 10s
+
+scrape_configs:
+  # ---- Docker Container Logs ----
+  - job_name: docker
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: docker
+          __path__: /var/log/docker/*log
+
+  # ---- Application Logs (mounted volume) ----
+  - job_name: application
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: application
+          __path__: /var/log/app/*.log
+
+    pipeline_stages:
+      # Parse JSON logs
+      - json:
+          expressions:
+            level: level
+            service: service
+            message: message
+            trace_id: trace_id
+            request_id: request_id
+            timestamp: timestamp
+
+      # Extract labels from parsed JSON
+      - labels:
+          level:
+          service:
+          trace_id:
+          request_id:
+
+      # Set timestamp from log entry
+      - timestamp:
+          source: timestamp
+          format: RFC3339Nano
+
+      # Set log line output
+      - output:
+          source: message
+
+  # ---- Docker Container Log Files ----
+  - job_name: containers
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: containers
+          __path__: /var/lib/docker/containers/*/*-json.log
+
+    pipeline_stages:
+      - json:
+          expressions:
+            stream: stream
+            log: log
+            time: time
+
+      - regex:
+          expression: '(?P<container_name>/[a-zA-Z0-9_-]+)'
+          source: container_name
+
+      - labels:
+          stream:
+
+      - timestamp:
+          source: time
+          format: RFC3339Nano
+
+      - output:
+          source: log

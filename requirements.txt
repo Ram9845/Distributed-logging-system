@@ -1,0 +1,47 @@
+# =============================================================================
+# Distributed Logging & Monitoring System — Python Dependencies
+# =============================================================================
+
+# ---- Web Framework ----
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+python-multipart==0.0.18
+
+# ---- Database ----
+sqlalchemy[asyncio]==2.0.36
+asyncpg==0.30.0
+psycopg2-binary==2.9.10
+alembic==1.14.1
+
+# ---- Kafka ----
+confluent-kafka==2.6.1
+kafka-python-ng==2.2.3
+
+# ---- Redis ----
+redis[hiredis]==5.2.1
+
+# ---- Monitoring & Metrics ----
+prometheus-client==0.21.1
+prometheus-fastapi-instrumentator==7.0.2
+
+# ---- Logging ----
+structlog==24.4.0
+python-json-logger==2.0.7
+
+# ---- Data Validation ----
+pydantic==2.10.4
+pydantic-settings==2.7.1
+
+# ---- HTTP Client ----
+httpx==0.28.1
+
+# ---- Testing ----
+pytest==8.3.4
+pytest-asyncio==0.25.0
+pytest-cov==6.0.0
+pytest-mock==3.14.0
+
+# ---- Utilities ----
+python-dotenv==1.0.1
+orjson==3.10.13
+tenacity==9.0.0

@@ -1,0 +1,153 @@
+# =============================================================================
+# Prometheus Alert Rules
+# =============================================================================
+# Alert rules for the Distributed Logging & Monitoring System.
+# Triggers alerts for error rates, latency, CPU, and Kafka issues.
+# =============================================================================
+
+groups:
+  # ---- Application Alerts ----
+  - name: application_alerts
+    rules:
+      # High error rate: >20 errors per minute
+      - alert: HighErrorRate
+        expr: increase(logs_errors_total[1m]) > 20
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High error rate detected"
+          description: >
+            Error rate has exceeded 20 errors per minute.
+            Current rate: {{ $value }} errors/min.
+            Service: {{ $labels.service }}
+
+      # High HTTP error rate (5xx responses)
+      - alert: HighHTTPErrorRate
+        expr: >
+          (
+            sum(rate(http_requests_total{status_code=~"5.."}[5m]))
+            /
+            sum(rate(http_requests_total[5m]))
+          ) > 0.05
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "HTTP 5xx error rate above 5%"
+          description: "HTTP 5xx error rate is {{ $value | humanizePercentage }}"
+
+  # ---- Latency Alerts ----
+  - name: latency_alerts
+    rules:
+      # High response latency (p95 > 500ms)
+      - alert: HighResponseLatency
+        expr: >
+          histogram_quantile(0.95,
+            sum(rate(http_request_duration_seconds_bucket[5m])) by (le)
+          ) > 0.5
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High response latency detected"
+          description: >
+            95th percentile response latency is {{ $value }}s,
+            exceeding the 500ms threshold.
+
+      # Kafka produce latency
+      - alert: HighKafkaProduceLatency
+        expr: >
+          histogram_quantile(0.95,
+            sum(rate(kafka_produce_latency_seconds_bucket[5m])) by (le)
+          ) > 0.1
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High Kafka produce latency"
+          description: "Kafka produce p95 latency is {{ $value }}s"
+
+  # ---- System Alerts ----
+  - name: system_alerts
+    rules:
+      # High CPU usage
+      - alert: HighCPUUsage
+        expr: >
+          100 - (avg(rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage detected"
+          description: "CPU usage is {{ $value }}%, exceeding 80% threshold"
+
+      # High memory usage
+      - alert: HighMemoryUsage
+        expr: >
+          (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage detected"
+          description: "Memory usage is {{ $value }}%"
+
+      # Disk space running low
+      - alert: DiskSpaceLow
+        expr: >
+          (1 - (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"})) * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Disk space running low"
+          description: "Disk usage is {{ $value }}% on {{ $labels.mountpoint }}"
+
+  # ---- Kafka Alerts ----
+  - name: kafka_alerts
+    rules:
+      # Consumer lag too high
+      - alert: HighConsumerLag
+        expr: kafka_consumergroup_lag > 1000
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High Kafka consumer lag"
+          description: >
+            Consumer group {{ $labels.consumergroup }} has a lag of
+            {{ $value }} messages on topic {{ $labels.topic }}
+
+      # Kafka broker down
+      - alert: KafkaBrokerDown
+        expr: kafka_brokers < 1
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Kafka broker is down"
+          description: "No Kafka brokers available"
+
+  # ---- Service Health Alerts ----
+  - name: service_health_alerts
+    rules:
+      # Consumer service down
+      - alert: ConsumerDown
+        expr: consumer_status == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Log consumer service is down"
+          description: "The log consumer service has been down for more than 2 minutes"
+
+      # Database connection lost
+      - alert: DatabaseConnectionLost
+        expr: consumer_db_connection_status == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Database connection lost"
+          description: "The consumer has lost its database connection"
