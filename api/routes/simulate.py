@@ -85,7 +85,7 @@ def _generate_single_log(
     timestamp = datetime.now(timezone.utc) - timedelta(seconds=offset_seconds)
 
     return {
-        "timestamp": timestamp.isoformat(),
+        "timestamp": timestamp,
         "service": svc,
         "level": level,
         "endpoint": endpoint,
