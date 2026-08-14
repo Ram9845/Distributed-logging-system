@@ -11,6 +11,10 @@ from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoin
 from starlette.requests import Request
 from starlette.responses import Response
 from api.utils.helpers import generate_request_id
+from api.services.metrics_service import (
+    HTTP_REQUESTS_TOTAL,
+    HTTP_REQUEST_DURATION,
+)
 
 
 logger = structlog.get_logger(__name__)
@@ -61,6 +65,19 @@ class RequestTrackingMiddleware(BaseHTTPMiddleware):
             response.headers["X-Request-ID"] = request_id
             response.headers["X-Correlation-ID"] = correlation_id
             response.headers["X-Response-Time-Ms"] = str(round(duration_ms, 2))
+
+            # Record Prometheus Metrics
+            endpoint = request.url.path
+            method = request.method
+            status_code = str(response.status_code)
+            
+            HTTP_REQUESTS_TOTAL.labels(
+                method=method, endpoint=endpoint, status_code=status_code
+            ).inc()
+            
+            HTTP_REQUEST_DURATION.labels(
+                method=method, endpoint=endpoint
+            ).observe(duration_ms / 1000.0)
 
             # Log the completed request
             logger.info(

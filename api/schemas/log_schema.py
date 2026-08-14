@@ -8,7 +8,7 @@ serialization, and OpenAPI documentation.
 from datetime import datetime
 from typing import Any
 from uuid import UUID
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 from api.utils.constants import LOG_LEVELS, SERVICES
 
 
@@ -98,6 +98,27 @@ class LogResponse(LogBase):
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+    @model_validator(mode="before")
+    @classmethod
+    def map_orm_fields(cls, data: Any) -> Any:
+        """Map ORM metadata_ attribute to schema metadata field."""
+        if hasattr(data, "metadata_"):
+            return {
+                "id": data.id,
+                "timestamp": data.timestamp,
+                "service": data.service,
+                "level": data.level,
+                "endpoint": data.endpoint,
+                "latency_ms": data.latency_ms,
+                "status_code": data.status_code,
+                "trace_id": data.trace_id,
+                "request_id": data.request_id,
+                "message": data.message,
+                "metadata": data.metadata_ or {},
+                "created_at": data.created_at,
+            }
+        return data
 
 
 class LogFilter(BaseModel):

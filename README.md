@@ -46,14 +46,28 @@ Once everything is running, you can access the system through your browser:
 
 ---
 
+## 📊 Dashboards
+
+![System Overview Dashboard](docs/images/system_overview.png)
+*This dashboard provides a high-level overview of the logging system's health, tracking total ingested logs, error rates, and active alerts. The real-time graphs allow you to instantly spot anomalies or spikes in error activity across all microservices.*
+
+![API Performance Dashboard](docs/images/api_performance.png)
+*This dashboard focuses on the FastAPI backend's performance, featuring a latency heatmap and a breakdown of the most accessed endpoints. It perfectly visualizes "cold starts" in the connection pool and confirms that the vast majority of requests are served in under 50ms.*
+
+---
+
 ## 🎮 Interacting with the System (No `make` required)
 
 If you don't have `make` installed (e.g., you are on Windows Git Bash), you can use these direct commands to interact with the API and database.
 
 ### 1. Simulate Traffic
-To see data appear in Grafana, generate 100 random log entries across 5 simulated microservices:
+To see data appear in Grafana, generate random log entries across the simulated microservices:
 ```bash
+# Option A: Fast burst of 100 logs via API
 curl -s -X POST http://localhost:8000/api/v1/simulate -H "Content-Type: application/json" -d "{\"count\": 100}"
+
+# Option B: Continuous realistic HTTP traffic (2 requests/sec for 30 seconds)
+python -m scripts.simulate_traffic --duration 30 --rps 2
 ```
 
 ### 2. Trigger Alerts
