@@ -10,7 +10,7 @@ A **production-ready** distributed logging system that collects, processes, stor
 Make sure you have installed:
 - **Docker Desktop** (or Docker Engine with Docker Compose v2)
 - At least 4 GB RAM available for containers
-- Ports 3000, 5432, 6379, 8000, 8080, 9090, 9092, 9100, 9308 available
+- Ports 3000(grafana), 5432(postgres), 6379, 8000(fastapi), 8080(kafka), 9090(prometheus), 9092, 9100(Loki), 9308 available
 
 ### 1. Configure the Environment
 Before starting, create your environment variables file:
@@ -159,9 +159,7 @@ docker compose down -v --remove-orphans
 
 ---
 
-## 📝 Resume Bullets
-
-> Use these to describe this project on your resume:
+## 📝 Bullets
 
 - **Designed and built** a distributed logging system processing 1000+ logs/minute from 5 microservices using FastAPI, Apache Kafka, and PostgreSQL
 - **Implemented** real-time log ingestion pipeline with Kafka producer (batching, gzip compression, idempotent delivery) and consumer (manual offset management, dead letter queue, batch DB inserts)
